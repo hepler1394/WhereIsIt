@@ -27,18 +27,14 @@ let STORES = [
 
 // ── Departments ──
 const DEPARTMENTS = [
-  { name: 'Fresh', sub: 'Produce & Salads', emoji: '🥬' },
-  { name: 'Meat & Seafood', sub: 'Butcher & Fish', emoji: '🥩' },
-  { name: 'Dairy', sub: 'Milk, Cheese, Eggs', emoji: '🧀' },
+  { name: 'Produce', sub: 'Fruits & Vegetables', emoji: '🥬' },
+  { name: 'Meat & Seafood', sub: 'Butcher & Fish Counter', emoji: '🥩' },
+  { name: 'Dairy', sub: 'Milk, Cheese & Eggs', emoji: '🧀' },
   { name: 'Bakery', sub: 'Fresh Baked Daily', emoji: '🍞' },
-  { name: 'Deli', sub: 'Ready-to-Eat', emoji: '🥪' },
-  { name: 'Pantry', sub: 'Canned & Dry Goods', emoji: '🥫' },
-  { name: 'Frozen', sub: 'Meals & Treats', emoji: '🧊' },
-  { name: 'Beverages', sub: 'Coffee, Juice & Soda', emoji: '☕' },
-  { name: 'Snacks', sub: 'Chips & Cookies', emoji: '🍪' },
-  { name: 'Health & Beauty', sub: 'Pharmacy & Personal', emoji: '💊' },
-  { name: 'Household', sub: 'Cleaning & Laundry', emoji: '🧹' },
-  { name: 'Baby & Pet', sub: 'Baby Food & Pet Care', emoji: '🐾' },
+  { name: 'Deli', sub: 'Prepared Foods & Subs', emoji: '🥪' },
+  { name: 'Grocery', sub: 'Dry Goods & Canned', emoji: '🛒' },
+  { name: 'Frozen', sub: 'Frozen Meals & Treats', emoji: '🧊' },
+  { name: 'General Merchandise', sub: 'Health, Beauty & Home', emoji: '🏠' },
 ];
 
 // ── Hy-Vee Aisle Layout (Rice Road) ──
@@ -135,20 +131,121 @@ async function fetchStores() {
 // ══════════════════════════════
 // DEPARTMENTS — Hy-Vee circular icons
 // ══════════════════════════════
+// Map department names to aisle ranges for browsing
+const DEPT_AISLE_MAP = {
+  'Produce': null,
+  'Meat & Seafood': null,
+  'Dairy': null,
+  'Bakery': null,
+  'Deli': null,
+  'Grocery': ['1','2','3','4','5','6','7','8','9','10'],
+  'Frozen': null,
+  'General Merchandise': ['11','12','13','14'],
+};
+
 function buildDepartments() {
   document.getElementById('dept-grid').innerHTML = DEPARTMENTS.map(d => `
-    <button class="hv-dept-card" onclick="doSearch('${d.name}')">
+    <button class="hv-dept-card" onclick="browseDepartment('${d.name}')">
       <div class="hv-dept-icon">${d.emoji}</div>
       <div class="hv-dept-name">${d.name}</div>
       <div class="hv-dept-sub">${d.sub}</div>
     </button>`).join('');
 }
 
+// Browse products in a department
+window.browseDepartment = async (deptName) => {
+  document.getElementById('browse-view').classList.add('hidden');
+  document.getElementById('search-view').classList.remove('hidden');
+
+  const grid = document.getElementById('search-results');
+  const header = document.getElementById('results-header');
+  grid.innerHTML = '<div class="hv-loading"><div class="hv-spinner"></div><div class="hv-loading-text">Loading ' + deptName + '...</div></div>';
+
+  header.innerHTML = `
+    <div>
+      <span class="hv-results-count">${deptName}</span>
+      <span class="hv-results-store"> · ${state.store?.name || 'Hy-Vee'}</span>
+    </div>
+    <button class="hv-results-back" onclick="clearSearch()">← Back</button>`;
+
+  let products = [];
+  const hasRealStore = state.store?.id && !state.store.id.startsWith('local-');
+
+  if (hasRealStore) {
+    try {
+      // Try fetching by department name from the API
+      const aisles = DEPT_AISLE_MAP[deptName];
+      let url = `${API}/stores/${state.store.id}/products?perPage=60`;
+      if (aisles?.length) {
+        // Fetch products from specific aisles
+        for (const a of aisles) {
+          const r = await fetch(`${API}/stores/${state.store.id}/products?aisle=${a}&perPage=30`);
+          if (r.ok) {
+            const d = await r.json();
+            products.push(...(d.data || []));
+          }
+        }
+      } else {
+        // Fetch by department name match
+        const r = await fetch(`${url}&department=${encodeURIComponent(deptName)}`);
+        if (r.ok) {
+          const d = await r.json();
+          products = d.data || [];
+        }
+      }
+    } catch (e) { console.warn('Dept fetch failed', e); }
+  }
+
+  // Fallback: use local search
+  if (!products.length) {
+    const results = localSearch(deptName);
+    renderResults(results, deptName);
+    return;
+  }
+
+  // Render products as cards
+  header.querySelector('.hv-results-count').textContent = `${deptName} — ${products.length} items`;
+  renderProductCards(products);
+};
+
+// Render fetched products as Hy-Vee cards
+function renderProductCards(products) {
+  const grid = document.getElementById('search-results');
+  grid.innerHTML = products.map((p, i) => {
+    const pct = Math.round((p.confidence || 0.7) * 100);
+    const confClass = pct >= 75 ? 'high' : pct >= 50 ? 'med' : 'low';
+    const aisleNum = p.aisles?.aisle_number || p.aisle_number;
+    const locationLabel = aisleNum ? `Aisle ${aisleNum}` : (p.department || 'Store');
+    const badgeClass = aisleNum ? 'hv-badge-aisle' : 'hv-badge-dept';
+
+    return `
+      <div class="hv-product-card" style="animation-delay:${Math.min(i, 12) * 0.03}s">
+        <div class="hv-product-img-wrap">
+          <span class="hv-badge ${badgeClass}">${locationLabel}</span>
+          ${p.image_url
+            ? `<img class="hv-product-img" src="${p.image_url}" alt="${p.product_name}" loading="lazy" onerror="this.outerHTML='<div class=\\'hv-product-img-placeholder\\'>🛒</div>'">`
+            : '<div class="hv-product-img-placeholder">🛒</div>'
+          }
+        </div>
+        <div class="hv-product-body">
+          <div class="hv-product-aisle">${locationLabel}</div>
+          <div class="hv-product-name">${p.product_name}</div>
+          ${p.brand ? `<div class="hv-product-brand">${p.brand}</div>` : ''}
+          <div class="hv-product-detail">${p.location_detail || ''}</div>
+          <div class="hv-conf-row">
+            <div class="hv-conf-bar"><div class="hv-conf-fill ${confClass}" style="width:${pct}%"></div></div>
+            <span class="hv-conf-text">${pct}%</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
 // ══════════════════════════════
 // SUBNAV PILLS
 // ══════════════════════════════
 function buildSubnavPills() {
-  const pills = ['All','Fresh','Dairy','Meat','Bakery','Deli','Pantry','Frozen','Beverages','Snacks'];
+  const pills = ['All','Produce','Dairy','Meat & Seafood','Bakery','Deli','Grocery','Frozen','General Merchandise'];
   document.getElementById('subnav-pills').innerHTML = pills.map((p, i) =>
     `<button class="hv-pill ${i === 0 ? 'active' : ''}" onclick="filterDept('${p}')">${p}</button>`
   ).join('');
@@ -157,8 +254,8 @@ function buildSubnavPills() {
 window.filterDept = dept => {
   document.querySelectorAll('.hv-pill').forEach(p => p.classList.remove('active'));
   event.target.classList.add('active');
-  if (dept === 'All') return;
-  doSearch(dept);
+  if (dept === 'All') { clearSearch(); return; }
+  browseDepartment(dept);
 };
 
 // ══════════════════════════════

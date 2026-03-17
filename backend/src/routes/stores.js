@@ -317,14 +317,15 @@ export async function storeRoutes(app) {
   // PRODUCT LOCATIONS SUB-ROUTES
   // ══════════════════════════════════════════
 
-  // GET /api/v1/stores/:id/products
+  // GET /api/v1/stores/:id/products?aisle=5&department=Dairy&page=1&perPage=50
   app.get('/:id/products', async (request) => {
     const { id } = request.params;
     if (!isUUID(id)) throw new ValidationError('Invalid store ID format');
     const { page, perPage } = parsePagination(request.query);
+    const { aisle, department } = request.query;
     if (!db.isConnected()) return paginated([], { page, perPage, total: 0 });
 
-    const { locations, total } = await db.productLocations.getByStore(id, { page, perPage });
+    const { locations, total } = await db.productLocations.getByStore(id, { page, perPage, aisle, department });
     return paginated(locations, { page, perPage, total });
   });
 }

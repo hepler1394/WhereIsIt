@@ -327,14 +327,27 @@ export const productLocations = {
     return data;
   },
 
-  async getByStore(storeId, { page = 1, perPage = 50 } = {}) {
+  async getByStore(storeId, { page = 1, perPage = 50, aisle, department } = {}) {
     const offset = (page - 1) * perPage;
-    const { data, count } = await runQuery(c =>
-      c.from('product_locations')
-        .select('*, aisles(aisle_number, aisle_label), categories(name)', { count: 'exact' })
-        .eq('store_id', storeId)
-        .order('product_name')
-        .range(offset, offset + perPage - 1)
+    let query = supabase.from('product_locations')
+      .select('*, aisles(aisle_number, aisle_label), categories(name)', { count: 'exact' })
+      .eq('store_id', storeId);
+
+    if (aisle) {
+      // Filter by aisle number via the aisles join
+      const { data: aisleRow } = await runQuery(c =>
+        c.from('aisles').select('id').eq('store_id', storeId).eq('aisle_number', aisle).limit(1)
+      );
+      if (aisleRow?.[0]) query = query.eq('aisle_id', aisleRow[0].id);
+    }
+
+    if (department) {
+      // Fuzzy match department in product name or location detail
+      query = query.or(`product_name.ilike.%${department}%,location_detail.ilike.%${department}%`);
+    }
+
+    const { data, count } = await runQuery(() =>
+      query.order('product_name').range(offset, offset + perPage - 1)
     );
     return { locations: data, total: count };
   },
