@@ -1,291 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#E31837" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="description" content="WhereIsIt — Find anything at Hy-Vee instantly. Know exactly which aisle to go to before you walk in." />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WhereIsIt — Find Anything at Hy-Vee</title>
-  <link rel="manifest" href="/manifest.json" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/src/style.css" />
+  <meta name="description" content="Find any product at Hy-Vee instantly. Know the exact aisle before you walk in.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
-  <div id="app">
 
-    <!-- ═══ ONBOARDING ═══ -->
-    <div id="onboarding" class="view active">
-      <div class="onboarding-container">
-        <div class="onboarding-slide active" data-slide="0">
-          <div class="ob-hero">
-            <div class="ob-logo">
-              <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                <rect width="64" height="64" rx="16" fill="url(#logo-grad)"/>
-                <path d="M28 22a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 16a6 6 0 1 1 0-12 6 6 0 0 1 0 12z" fill="white" opacity="0.95"/>
-                <path d="M42 42l-7-7" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.95"/>
-                <defs><linearGradient id="logo-grad" x1="0" y1="0" x2="64" y2="64"><stop stop-color="#E31837"/><stop offset="1" stop-color="#FF6B6B"/></linearGradient></defs>
-              </svg>
-            </div>
-            <h1>WhereIsIt</h1>
-            <p class="ob-tagline">Find anything at Hy-Vee.<br>Know your aisle before you walk in.</p>
-          </div>
-          <button class="btn btn-primary btn-full" onclick="nextSlide()">
-            Get Started
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </button>
-        </div>
+<!-- ═══════════════════════════════════
+     HEADER — Hy-Vee Red Bar
+     ═══════════════════════════════════ -->
+<header class="hv-header" id="hv-header">
+  <div class="hv-header-inner">
+    <div class="hv-logo" onclick="window.location.reload()">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      <span class="hv-logo-text">WhereIsIt</span>
+    </div>
+    <!-- Search bar integrated in header -->
+    <div class="hv-search-bar">
+      <svg class="hv-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="search-input" placeholder="Search products at Hy-Vee..." autocomplete="off" />
+      <button class="hv-search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
+    </div>
+    <!-- Store selector in header -->
+    <button class="hv-store-btn" id="store-btn" onclick="showStorePicker()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span id="store-name">Hy-Vee</span>
+    </button>
+  </div>
+  <!-- Sub-nav: Quick category pills -->
+  <div class="hv-subnav">
+    <div class="hv-subnav-inner" id="subnav-pills"></div>
+  </div>
+</header>
 
-        <div class="onboarding-slide" data-slide="1">
-          <div class="ob-features">
-            <div class="ob-feature">
-              <div class="ob-feature-icon" style="--c:#E31837">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              </div>
-              <div>
-                <h3>Your Hy-Vee Store</h3>
-                <p>Instantly set to your Lee's Summit Hy-Vee location</p>
-              </div>
-            </div>
-            <div class="ob-feature">
-              <div class="ob-feature-icon" style="--c:#2563EB">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-              </div>
-              <div>
-                <h3>Search Any Product</h3>
-                <p>Get the exact aisle, section, and confidence level</p>
-              </div>
-            </div>
-            <div class="ob-feature">
-              <div class="ob-feature-icon" style="--c:#7C3AED">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7c0 4-3 6-3 9H8c0-3-3-5-3-9a7 7 0 0 1 7-7z"/><path d="M9 21h6"/><path d="M10 24h4"/></svg>
-              </div>
-              <div>
-                <h3>AI-Powered Inference</h3>
-                <p>Smart agents figure out likely locations — even without data</p>
-              </div>
-            </div>
-            <div class="ob-feature">
-              <div class="ob-feature-icon" style="--c:#059669">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              </div>
-              <div>
-                <h3>Community Reports</h3>
-                <p>Real shoppers confirm and update product locations</p>
-              </div>
-            </div>
-          </div>
-          <button class="btn btn-primary btn-full" onclick="nextSlide()">
-            Continue
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </button>
-        </div>
+<!-- ═══════════════════════════════════
+     MAIN CONTENT
+     ═══════════════════════════════════ -->
+<main class="hv-main">
 
-        <div class="onboarding-slide" data-slide="2">
-          <div class="ob-hero">
-            <div class="ob-check">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            </div>
-            <h1>You're All Set</h1>
-            <p class="ob-tagline">Your store is ready. Start searching.</p>
-          </div>
-          <button class="btn btn-primary btn-full" onclick="finishOnboarding()">Start Finding at Hy-Vee</button>
-        </div>
-
-        <div class="ob-dots">
-          <span class="dot active" data-dot="0"></span>
-          <span class="dot" data-dot="1"></span>
-          <span class="dot" data-dot="2"></span>
+  <!-- Default browse view -->
+  <div id="browse-view">
+    <!-- Store info bar -->
+    <div class="hv-store-info">
+      <div class="hv-store-info-left">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#CC0000" stroke="none"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3" fill="white"/></svg>
+        <div>
+          <div class="hv-store-info-name" id="store-info-name">Hy-Vee (Rice Road)</div>
+          <div class="hv-store-info-addr" id="store-address">301 NE Rice Rd, Lee's Summit, MO 64086</div>
         </div>
       </div>
+      <button class="hv-change-store" onclick="showStorePicker()">Change Store</button>
     </div>
 
-    <!-- ═══ MAIN APP ═══ -->
-    <div id="main-app" class="view">
+    <!-- Departments grid -->
+    <section class="hv-section">
+      <h2 class="hv-section-title">Shop by Department</h2>
+      <div class="hv-dept-grid" id="dept-grid"></div>
+    </section>
 
-      <!-- Store Header -->
-      <header id="store-header">
-        <div class="header-inner">
-          <button class="store-selector" onclick="showStorePicker()">
-            <div class="store-marker" id="store-marker"></div>
-            <div class="store-meta">
-              <span class="store-label" id="store-name">Select a store</span>
-              <span class="store-addr" id="store-address">Tap to choose your location</span>
-            </div>
-            <svg class="store-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-        </div>
-      </header>
-
-      <!-- Pages -->
-      <main id="pages">
-
-        <!-- SEARCH -->
-        <section id="page-search" class="page active">
-          <div class="search-wrap">
-            <div class="search-bar" id="search-bar">
-              <svg class="search-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-              <input type="search" id="search-input" placeholder="Search Hy-Vee products..." autocomplete="off" autocapitalize="none" />
-              <button id="search-clear" class="search-clear hidden" onclick="clearSearch()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
-            </div>
-          </div>
-
-          <div id="search-results" class="hidden"></div>
-
-          <div id="search-default">
-            <div class="section-header">
-              <h2>Hy-Vee Departments</h2>
-            </div>
-            <div class="category-grid" id="category-grid"></div>
-
-            <div id="recent-section" class="hidden">
-              <div class="section-header">
-                <h2>Recent</h2>
-                <button class="link-btn" onclick="clearRecent()">Clear</button>
-              </div>
-              <div id="recent-list"></div>
-            </div>
-          </div>
-        </section>
-
-        <!-- DEALS -->
-        <section id="page-deals" class="page">
-          <div class="page-title">
-            <h1>Hy-Vee Deals</h1>
-            <p>This week's sales and Fuel Saver deals at your Hy-Vee</p>
-          </div>
-          <div id="deals-content">
-            <div class="empty-state">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-              <h3>No Active Deals</h3>
-              <p>Deals will appear here when our weekly ad crawler processes your store's specials.</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- COMMUNITY -->
-        <section id="page-community" class="page">
-          <div class="page-title">
-            <h1>Community</h1>
-            <p>Help shoppers at your store find products faster</p>
-          </div>
-
-          <form class="card" id="submit-form" onsubmit="submitLocation(event)">
-            <div class="card-header">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-              <h3>Report a Product Location</h3>
-            </div>
-            <div class="form-group">
-              <label for="submit-product">Product name</label>
-              <input type="text" id="submit-product" placeholder="e.g. Heinz Ketchup" required />
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="submit-aisle">Aisle</label>
-                <input type="text" id="submit-aisle" placeholder="e.g. 8" required />
-              </div>
-              <div class="form-group">
-                <label for="submit-dept">Department</label>
-                <input type="text" id="submit-dept" placeholder="Optional" />
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary btn-full" id="submit-btn">
-              Submit Report
-            </button>
-            <p class="form-note">Reviewed instantly by AI — no waiting for human approval</p>
-          </form>
-
-          <div class="card">
-            <div class="card-header">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-              <h3>How it Works</h3>
-            </div>
-            <ol class="how-steps">
-              <li>Spot a product? Report its aisle and section.</li>
-              <li>Our AI agent verifies accuracy in seconds.</li>
-              <li>Approved reports go live for all shoppers.</li>
-              <li>Earn trust score — top contributors get perks.</li>
-            </ol>
-          </div>
-        </section>
-
-        <!-- PROFILE -->
-        <section id="page-profile" class="page">
-          <div class="page-title"><h1>Profile</h1></div>
-
-          <div class="card profile-hero">
-            <div class="avatar">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
-            <h3 id="profile-name">Guest</h3>
-            <p class="profile-meta">Sign in to save your preferences</p>
-            <button class="btn btn-outline btn-sm">Sign In</button>
-          </div>
-
-          <div class="card">
-            <h3 class="settings-title">Preferences</h3>
-            <div class="setting-row">
-              <div class="setting-label">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                <span>Dark Mode</span>
-              </div>
-              <label class="toggle"><input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode()"><span class="slider"></span></label>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3 class="settings-title">About</h3>
-            <div class="setting-row"><span>Version</span><span class="text-dim">1.0.0</span></div>
-            <div class="setting-row"><span>AI Agents</span><span class="status-badge">8 Active</span></div>
-          </div>
-        </section>
-      </main>
-
-      <!-- Store Picker -->
-      <div id="store-picker" class="modal hidden">
-        <div class="modal-bg" onclick="hideStorePicker()"></div>
-        <div class="modal-sheet">
-          <div class="sheet-handle"></div>
-          <h2>Your Hy-Vee</h2>
-          <div class="search-bar compact">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input type="search" id="store-search" placeholder="Search stores..." oninput="filterStores()" />
-          </div>
-          <button class="btn btn-outline btn-full btn-sm locate-btn" onclick="detectNearby()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
-            Use My Location
-          </button>
-          <div id="store-list"></div>
-        </div>
+    <!-- Recent searches -->
+    <section class="hv-section hidden" id="recent-section">
+      <div class="hv-section-header">
+        <h2 class="hv-section-title">Recent Searches</h2>
+        <button class="hv-text-btn" onclick="clearRecent()">Clear All</button>
       </div>
+      <div class="hv-recent-list" id="recent-list"></div>
+    </section>
 
-      <!-- Tab Bar -->
-      <nav id="tab-bar">
-        <button class="tab active" data-page="search" onclick="switchTab('search')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <span>Search</span>
-        </button>
-        <button class="tab" data-page="deals" onclick="switchTab('deals')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-          <span>Deals</span>
-        </button>
-        <button class="tab" data-page="community" onclick="switchTab('community')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span>Community</span>
-        </button>
-        <button class="tab" data-page="profile" onclick="switchTab('profile')">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>Profile</span>
-        </button>
-      </nav>
-    </div>
+    <!-- Deals section -->
+    <section class="hv-section" id="deals-section">
+      <h2 class="hv-section-title">This Week's Deals</h2>
+      <div class="hv-product-grid" id="deals-grid"></div>
+    </section>
   </div>
 
-  <script type="module" src="/src/main.js"></script>
+  <!-- Search results view -->
+  <div id="search-view" class="hidden">
+    <div class="hv-results-header" id="results-header"></div>
+    <div class="hv-product-grid" id="search-results"></div>
+  </div>
+
+</main>
+
+<!-- ═══════════════════════════════════
+     STORE PICKER MODAL
+     ═══════════════════════════════════ -->
+<div class="hv-modal hidden" id="store-picker">
+  <div class="hv-modal-backdrop" onclick="hideStorePicker()"></div>
+  <div class="hv-modal-content">
+    <div class="hv-modal-header">
+      <h3>Choose Your Hy-Vee</h3>
+      <button class="hv-modal-close" onclick="hideStorePicker()">✕</button>
+    </div>
+    <div class="hv-store-list" id="store-list"></div>
+  </div>
+</div>
+
+<script type="module" src="/src/main.js"></script>
 </body>
 </html>
