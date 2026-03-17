@@ -1,0 +1,44 @@
+name: "WhereIsIt Crawler"
+
+on:
+  schedule:
+    # Run Hy-Vee crawler every Wednesday at 6am UTC (weekly ads usually drop mid-week)
+    - cron: "0 6 * * 3"
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  crawl-hyvee:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r crawler/requirements.txt
+
+      - name: Run Hy-Vee crawler
+        env:
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+        run: python crawler/crawl_hyvee.py
+
+      - name: Upload crawl output
+        uses: actions/upload-artifact@v4
+        with:
+          name: hyvee-crawl-${{ github.run_number }}
+          path: crawler/output/
+          retention-days: 30
+
+      # Optional: POST results to backend API for agent processing
+      # - name: Feed to Weekly Ad Agent
+      #   run: |
+      #     DEAL_FILE=$(ls crawler/output/hyvee_deals_*.json | head -1)
+      #     if [ -f "$DEAL_FILE" ]; then
+      #       AD_CONTENT=$(python -c "import json; d=json.load(open('$DEAL_FILE')); print(d.get('raw_text_for_agent',''))")
+      #       curl -X POST "${{ secrets.API_URL }}/api/v1/agents/parse-weekly-ad" \
+      #         -H "Content-Type: application/json" \
+      #         -d "{\"chain_name\": \"Hy-Vee\", \"ad_content\": $(echo $AD_CONTENT | python -c 'import sys,json; print(json.dumps(sys.stdin.read()))')}"
+      #     fi
