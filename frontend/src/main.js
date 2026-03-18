@@ -90,13 +90,14 @@ document.addEventListener('DOMContentLoaded', () => {
   buildDepartments();
   buildSubnavPills();
   buildRecent();
+  setupAutocomplete();
 
   const input = document.getElementById('search-input');
   input.addEventListener('input', () => {
     document.getElementById('search-clear').classList.toggle('hidden', !input.value);
   });
   input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') doSearch(input.value);
+    if (e.key === 'Enter') { hideAutocomplete(); doSearch(input.value); }
   });
 
   if (state.store) applyStore(state.store);
@@ -381,8 +382,16 @@ window.doSearch = async query => {
     } catch (e) { console.warn('API search failed', e); }
   }
 
-  // Fallback: local search
-  if (!results.length) results = localSearch(query);
+  // Always combine with local search for better coverage
+  const localResults = localSearch(query);
+  // Add local results that aren't already in API results (dedup by aisle)
+  const apiAisles = new Set(results.map(r => r.aisle));
+  for (const lr of localResults) {
+    if (!apiAisles.has(lr.aisle)) results.push(lr);
+  }
+
+  // Sort all results by confidence
+  results.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
 
   renderResults(results, query);
 };
@@ -436,8 +445,64 @@ function localSearch(query) {
     });
   }
 
-  return hits.sort((a, b) => b.confidence - a.confidence).slice(0, 3);
+  return hits.sort((a, b) => b.confidence - a.confidence).slice(0, 8);
 }
+
+// ══════════════════════════════
+// AUTOCOMPLETE — live suggestions
+// ══════════════════════════════
+let acTimer = null;
+function setupAutocomplete() {
+  const input = document.getElementById('search-input');
+  // Create dropdown
+  const dd = document.createElement('div');
+  dd.id = 'ac-dropdown';
+  dd.className = 'hv-ac-dropdown hidden';
+  input.parentElement.style.position = 'relative';
+  input.parentElement.appendChild(dd);
+
+  input.addEventListener('input', () => {
+    clearTimeout(acTimer);
+    const q = input.value.trim();
+    if (q.length < 2) { hideAutocomplete(); return; }
+    acTimer = setTimeout(() => fetchSuggestions(q), 300);
+  });
+
+  // Close on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.hv-search-box')) hideAutocomplete();
+  });
+}
+
+async function fetchSuggestions(q) {
+  const dd = document.getElementById('ac-dropdown');
+  try {
+    const r = await fetch(`${API}/search/suggest?q=${encodeURIComponent(q)}`);
+    if (!r.ok) return;
+    const d = await r.json();
+    const suggestions = d.data?.suggestions || [];
+    if (!suggestions.length) { hideAutocomplete(); return; }
+
+    dd.innerHTML = suggestions.map(s => `
+      <button class="hv-ac-item" onclick="pickSuggestion('${s.text.replace(/'/g, '')}')">
+        <span class="hv-ac-icon">${s.type === 'category' ? '📁' : '🔍'}</span>
+        <span class="hv-ac-text">${s.text}</span>
+        <span class="hv-ac-type">${s.type}</span>
+      </button>
+    `).join('');
+    dd.classList.remove('hidden');
+  } catch { hideAutocomplete(); }
+}
+
+function hideAutocomplete() {
+  document.getElementById('ac-dropdown')?.classList.add('hidden');
+}
+
+window.pickSuggestion = (text) => {
+  document.getElementById('search-input').value = text;
+  hideAutocomplete();
+  doSearch(text);
+};
 
 // ══════════════════════════════
 // RENDER RESULTS — Hy-Vee Product Cards

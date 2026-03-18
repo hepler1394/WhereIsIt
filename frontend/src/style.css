@@ -453,6 +453,32 @@ input { font-family:inherit; }
 .hv-store-opt-dist { font-size:0.78rem; font-weight:600; color:var(--hv-red); flex-shrink:0; }
 
 /* ═══════════════════════════════════
+   AUTOCOMPLETE DROPDOWN
+   ═══════════════════════════════════ */
+.hv-ac-dropdown {
+  position:absolute; top:100%; left:0; right:0; z-index:100;
+  background:var(--hv-card); border:1px solid var(--hv-border);
+  border-radius:0 0 var(--hv-radius) var(--hv-radius);
+  box-shadow:var(--hv-shadow-lg); max-height:320px; overflow-y:auto;
+  margin-top:2px;
+}
+.hv-ac-item {
+  display:flex; align-items:center; gap:10px; width:100%;
+  padding:10px 16px; background:none; border:none; border-bottom:1px solid var(--hv-border-light);
+  font-family:inherit; font-size:0.88rem; color:var(--hv-text);
+  cursor:pointer; text-align:left; transition:background var(--hv-transition);
+}
+.hv-ac-item:last-child { border-bottom:none; }
+.hv-ac-item:hover { background:var(--hv-red-light); }
+.hv-ac-icon { font-size:1.1rem; flex-shrink:0; }
+.hv-ac-text { flex:1; font-weight:500; }
+.hv-ac-type {
+  font-size:0.7rem; font-weight:600; color:var(--hv-text-muted);
+  text-transform:uppercase; letter-spacing:0.5px;
+  background:var(--hv-bg); padding:2px 8px; border-radius:var(--hv-radius-pill);
+}
+
+/* ═══════════════════════════════════
    UTILITY
    ═══════════════════════════════════ */
 .hidden { display:none !important; }
