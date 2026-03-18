@@ -596,6 +596,7 @@ async function loadCarousels() {
   const hasRealStore = state.store?.id && !state.store.id.startsWith('local-');
   if (!hasRealStore) return;
 
+  let loaded = 0;
   for (const cfg of CAROUSEL_CONFIG) {
     try {
       let url;
@@ -605,13 +606,28 @@ async function loadCarousels() {
         url = `${API}/stores/${state.store.id}/products?department=${encodeURIComponent(cfg.dept)}&perPage=20`;
       }
       const r = await fetch(url);
-      if (!r.ok) continue;
+      if (!r.ok) {
+        // Clear skeleton on failure
+        const section = document.getElementById(cfg.id);
+        if (section) section.innerHTML = '';
+        continue;
+      }
       const d = await r.json();
       const products = d.data || [];
-      if (!products.length) continue;
+      if (!products.length) {
+        const section = document.getElementById(cfg.id);
+        if (section) section.innerHTML = '';
+        continue;
+      }
       renderCarousel(cfg, products);
-    } catch (e) { console.warn('Carousel load failed:', cfg.id, e); }
+      loaded++;
+    } catch (e) {
+      console.warn('Carousel load failed:', cfg.id, e);
+      const section = document.getElementById(cfg.id);
+      if (section) section.innerHTML = '';
+    }
   }
+  if (loaded > 0) showToast(`${loaded} product sections loaded`, 'success');
 }
 
 function renderCarousel(cfg, products) {
