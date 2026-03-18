@@ -91,6 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
   buildSubnavPills();
   buildRecent();
   setupAutocomplete();
+  setupBackToTop();
+  setupImageObserver();
 
   const input = document.getElementById('search-input');
   input.addEventListener('input', () => {
@@ -106,7 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fetch real stores from API (non-blocking)
   fetchStores();
 
-  // Load product carousels after a small delay so store data is ready
+  // Load product carousels with skeleton placeholders first
+  showCarouselSkeletons();
   setTimeout(loadCarousels, 800);
 });
 
@@ -357,6 +360,10 @@ window.doSearch = async query => {
   grid.innerHTML = '<div class="hv-loading"><div class="hv-spinner"></div><div class="hv-loading-text">Searching Hy-Vee...</div></div>';
   header.innerHTML = '';
 
+  // Show search loading spinner
+  const searchSpinner = document.getElementById('search-loading');
+  searchSpinner?.classList.remove('hidden');
+
   let results = [];
 
   // Try live API
@@ -379,7 +386,10 @@ window.doSearch = async query => {
           brand: hit.brand || null,
         }));
       }
-    } catch (e) { console.warn('API search failed', e); }
+    } catch (e) {
+      console.warn('API search failed', e);
+      showToast('Search taking longer than usual...', 'info');
+    }
   }
 
   // Always combine with local search for better coverage
@@ -392,6 +402,9 @@ window.doSearch = async query => {
 
   // Sort all results by confidence
   results.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+
+  // Hide search loading spinner
+  searchSpinner?.classList.add('hidden');
 
   renderResults(results, query);
 };
@@ -514,9 +527,11 @@ function renderResults(results, query) {
   if (!results.length) {
     header.innerHTML = '';
     grid.innerHTML = `
-      <div class="hv-empty" style="grid-column:1/-1">
+      <div class="hv-empty">
+        <div class="hv-empty-icon">🔍</div>
         <h3>No results for "${query}"</h3>
-        <p>Try a different search term or check your spelling.</p>
+        <p>Try a different search term, check your spelling, or browse by department.</p>
+        <button class="hv-empty-btn" onclick="clearSearch()">Browse Departments</button>
       </div>`;
     return;
   }
@@ -639,3 +654,109 @@ window.scrollCarousel = (id, dir) => {
   const row = document.getElementById(`${id}-row`);
   if (row) row.scrollBy({ left: dir * 400, behavior: 'smooth' });
 };
+
+// ══════════════════════════════
+// TOAST NOTIFICATION SYSTEM
+// ══════════════════════════════
+window.showToast = (message, type = 'info', duration = 3000) => {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const icons = { success: '✓', error: '✕', info: 'ℹ' };
+  const toast = document.createElement('div');
+  toast.className = `hv-toast ${type}`;
+  toast.innerHTML = `<span class="hv-toast-icon">${icons[type] || 'ℹ'}</span><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('hv-toast-exit');
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+};
+
+// ══════════════════════════════
+// BACK TO TOP BUTTON
+// ══════════════════════════════
+function setupBackToTop() {
+  const btn = document.getElementById('back-top');
+  if (!btn) return;
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        btn.classList.toggle('visible', window.scrollY > 400);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+}
+
+// ══════════════════════════════
+// IMAGE LAZY-LOAD OBSERVER
+// ══════════════════════════════
+function setupImageObserver() {
+  if (!('IntersectionObserver' in window)) return;
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        img.classList.add('loaded');
+        io.unobserve(img);
+      }
+    });
+  }, { rootMargin: '50px' });
+
+  // Watch for new images added to the DOM
+  const mo = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      for (const node of m.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        const imgs = node.querySelectorAll?.('img[loading="lazy"]') || [];
+        imgs.forEach(img => {
+          img.addEventListener('load', () => img.classList.add('loaded'), { once: true });
+          if (img.complete) img.classList.add('loaded');
+          else io.observe(img);
+        });
+        if (node.matches?.('img[loading="lazy"]')) {
+          node.addEventListener('load', () => node.classList.add('loaded'), { once: true });
+          if (node.complete) node.classList.add('loaded');
+          else io.observe(node);
+        }
+      }
+    }
+  });
+  mo.observe(document.body, { childList: true, subtree: true });
+}
+
+// ══════════════════════════════
+// SKELETON LOADERS FOR CAROUSELS
+// ══════════════════════════════
+function showCarouselSkeletons() {
+  const configs = [
+    { id: 'carousel-snacks', title: '🍿 Snacks & Chips' },
+    { id: 'carousel-dairy', title: '🧀 Dairy & Eggs' },
+    { id: 'carousel-frozen', title: '🧊 Frozen Favorites' },
+    { id: 'carousel-beverages', title: '🥤 Beverages' },
+    { id: 'carousel-bakery', title: '🍞 Bakery & Bread' },
+    { id: 'carousel-cereal', title: '🥣 Cereal & Breakfast' },
+  ];
+  const skeletonCards = Array(6).fill('').map(() => `
+    <div class="hv-skeleton-card">
+      <div class="hv-skeleton hv-skeleton-img"></div>
+      <div class="hv-skeleton hv-skeleton-text"></div>
+      <div class="hv-skeleton hv-skeleton-text short"></div>
+    </div>
+  `).join('');
+
+  for (const cfg of configs) {
+    const section = document.getElementById(cfg.id);
+    if (!section) continue;
+    section.innerHTML = `
+      <div class="hv-carousel-header">
+        <h2>${cfg.title}</h2>
+        <span class="hv-see-all" style="opacity:0.3">See All →</span>
+      </div>
+      <div class="hv-carousel-wrap">
+        <div class="hv-carousel-row">${skeletonCards}</div>
+      </div>`;
+  }
+}

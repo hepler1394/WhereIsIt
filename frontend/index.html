@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>WhereIsIt — Find Anything at Hy-Vee</title>
   <meta name="description" content="Find any product at Hy-Vee instantly. Know the exact aisle before you walk in.">
+  <meta name="theme-color" content="#CC0000">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -24,16 +26,19 @@
     <!-- Search bar integrated in header -->
     <div class="hv-search-bar">
       <svg class="hv-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="search-input" placeholder="Search products at Hy-Vee..." autocomplete="off" />
-      <button class="hv-search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
+      <input type="text" id="search-input" placeholder="Search products at Hy-Vee..." autocomplete="off" aria-label="Search products" />
+      <div class="hv-search-loading hidden" id="search-loading">
+        <div class="hv-spinner-sm"></div>
+      </div>
+      <button class="hv-search-clear hidden" id="search-clear" onclick="clearSearch()" aria-label="Clear search">✕</button>
     </div>
-    <!-- Store selector in header -->
-    <button class="hv-store-btn" id="store-btn" onclick="showStorePicker()">
+    <!-- Store selector -->
+    <button class="hv-store-btn" id="store-btn" onclick="showStorePicker()" aria-label="Change store">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
       <span id="store-name">Hy-Vee</span>
     </button>
   </div>
-  <!-- Sub-nav: Quick category pills -->
+  <!-- Sub-nav pills -->
   <div class="hv-subnav">
     <div class="hv-subnav-inner" id="subnav-pills"></div>
   </div>
@@ -44,10 +49,10 @@
      ═══════════════════════════════════ -->
 <main class="hv-main">
 
-  <!-- Default browse view -->
+  <!-- Browse view -->
   <div id="browse-view">
     <!-- Store info bar -->
-    <div class="hv-store-info">
+    <div class="hv-store-info" id="store-info-bar">
       <div class="hv-store-info-left">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#CC0000" stroke="none"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3" fill="white"/></svg>
         <div>
@@ -58,7 +63,7 @@
       <button class="hv-change-store" onclick="showStorePicker()">Change Store</button>
     </div>
 
-    <!-- Departments grid -->
+    <!-- Departments -->
     <section class="hv-section">
       <h2 class="hv-section-title">Shop by Department</h2>
       <div class="hv-dept-grid" id="dept-grid"></div>
@@ -73,7 +78,7 @@
       <div class="hv-recent-list" id="recent-list"></div>
     </section>
 
-    <!-- Horizontal scrolling product rows (Hy-Vee style) -->
+    <!-- Horizontal scroll carousels -->
     <section class="hv-section" id="carousel-snacks"></section>
     <section class="hv-section" id="carousel-dairy"></section>
     <section class="hv-section" id="carousel-frozen"></section>
@@ -91,8 +96,50 @@
 </main>
 
 <!-- ═══════════════════════════════════
-     STORE PICKER MODAL
+     FOOTER — Hy-Vee style
      ═══════════════════════════════════ -->
+<footer class="hv-footer" id="hv-footer">
+  <div class="hv-footer-inner">
+    <div class="hv-footer-brand">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      <span>WhereIsIt</span>
+    </div>
+    <div class="hv-footer-links">
+      <div class="hv-footer-col">
+        <h4>Shop</h4>
+        <a href="#" onclick="browseDepartment('Grocery')">Grocery</a>
+        <a href="#" onclick="browseDepartment('Produce')">Produce</a>
+        <a href="#" onclick="browseDepartment('Dairy')">Dairy</a>
+        <a href="#" onclick="browseDepartment('Frozen')">Frozen</a>
+      </div>
+      <div class="hv-footer-col">
+        <h4>Help</h4>
+        <a href="#">Store Locator</a>
+        <a href="#">Contact Us</a>
+        <a href="#">FAQs</a>
+      </div>
+      <div class="hv-footer-col">
+        <h4>About</h4>
+        <a href="#">About WhereIsIt</a>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+      </div>
+    </div>
+    <div class="hv-footer-bottom">
+      <p>© 2026 WhereIsIt. Not affiliated with Hy-Vee, Inc. Product data from Open Food Facts.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- Back to Top Button -->
+<button class="hv-back-top hidden" id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+</button>
+
+<!-- Toast container -->
+<div class="hv-toast-container" id="toast-container"></div>
+
+<!-- Store Picker Modal -->
 <div class="hv-modal hidden" id="store-picker">
   <div class="hv-modal-backdrop" onclick="hideStorePicker()"></div>
   <div class="hv-modal-content">
