@@ -104,6 +104,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Fetch real stores from API (non-blocking)
   fetchStores();
+
+  // Load product carousels after a small delay so store data is ready
+  setTimeout(loadCarousels, 800);
 });
 
 async function fetchStores() {
@@ -496,3 +499,78 @@ function renderResults(results, query) {
       </div>`;
   }).join('');
 }
+
+// ══════════════════════════════
+// HORIZONTAL SCROLL CAROUSELS — Hy-Vee style
+// ══════════════════════════════
+const CAROUSEL_CONFIG = [
+  { id: 'carousel-snacks', title: 'Snacks & Chips', aisle: '6', emoji: '🍿' },
+  { id: 'carousel-dairy', title: 'Dairy & Eggs', dept: 'Dairy', emoji: '🧀' },
+  { id: 'carousel-frozen', title: 'Frozen Favorites', dept: 'Frozen', emoji: '🧊' },
+  { id: 'carousel-beverages', title: 'Beverages', aisle: '9', emoji: '🥤' },
+  { id: 'carousel-bakery', title: 'Bakery & Bread', aisle: '1', emoji: '🍞' },
+  { id: 'carousel-cereal', title: 'Cereal & Breakfast', aisle: '2', emoji: '🥣' },
+];
+
+async function loadCarousels() {
+  const hasRealStore = state.store?.id && !state.store.id.startsWith('local-');
+  if (!hasRealStore) return;
+
+  for (const cfg of CAROUSEL_CONFIG) {
+    try {
+      let url;
+      if (cfg.aisle) {
+        url = `${API}/stores/${state.store.id}/products?aisle=${cfg.aisle}&perPage=20`;
+      } else if (cfg.dept) {
+        url = `${API}/stores/${state.store.id}/products?department=${encodeURIComponent(cfg.dept)}&perPage=20`;
+      }
+      const r = await fetch(url);
+      if (!r.ok) continue;
+      const d = await r.json();
+      const products = d.data || [];
+      if (!products.length) continue;
+      renderCarousel(cfg, products);
+    } catch (e) { console.warn('Carousel load failed:', cfg.id, e); }
+  }
+}
+
+function renderCarousel(cfg, products) {
+  const section = document.getElementById(cfg.id);
+  if (!section) return;
+
+  const deptName = cfg.dept || cfg.title;
+
+  section.innerHTML = `
+    <div class="hv-carousel-header">
+      <h2>${cfg.emoji} ${cfg.title}</h2>
+      <span class="hv-see-all" onclick="browseDepartment('${deptName}')">See All →</span>
+    </div>
+    <div class="hv-carousel-wrap">
+      <button class="hv-carousel-arrow left" onclick="scrollCarousel('${cfg.id}', -1)">‹</button>
+      <div class="hv-carousel-row" id="${cfg.id}-row">
+        ${products.map(p => {
+          const aisleNum = p.aisles?.aisle_number || p.aisle_number;
+          const loc = aisleNum ? `Aisle ${aisleNum}` : (p.location_detail?.split(',')[0] || 'Store');
+          return `
+            <div class="hv-carousel-card" onclick="doSearch('${(p.product_name || '').replace(/'/g, '')}')">
+              ${p.image_url
+                ? `<img class="hv-carousel-card-img" src="${p.image_url}" alt="${p.product_name}" loading="lazy" onerror="this.outerHTML='<div class=\\'hv-carousel-card-img-placeholder\\'>🛒</div>'">`
+                : '<div class="hv-carousel-card-img-placeholder">🛒</div>'
+              }
+              <div class="hv-carousel-card-body">
+                <div class="hv-carousel-card-aisle">${loc}</div>
+                <div class="hv-carousel-card-name">${p.product_name}</div>
+                ${p.brand ? `<div class="hv-carousel-card-brand">${p.brand}</div>` : ''}
+                <button class="hv-carousel-card-btn">Find in Store</button>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+      <button class="hv-carousel-arrow right" onclick="scrollCarousel('${cfg.id}', 1)">›</button>
+    </div>`;
+}
+
+window.scrollCarousel = (id, dir) => {
+  const row = document.getElementById(`${id}-row`);
+  if (row) row.scrollBy({ left: dir * 400, behavior: 'smooth' });
+};
